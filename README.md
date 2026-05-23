@@ -17,11 +17,11 @@ trace-aware evals catch failures final-answer checks miss.
 ## Run Locally
 
 ```bash
-uvx --from git+https://github.com/agent-axiom/agent-anvil \
+uvx --from git+https://github.com/agent-axiom/agent-anvil@v0.2.19 \
   anvil paper reproduce \
   --manifest experiments/paper.yaml
 
-uvx --from git+https://github.com/agent-axiom/agent-anvil \
+uvx --from git+https://github.com/agent-axiom/agent-anvil@v0.2.19 \
   anvil leaderboard export docs/paper/results.json \
   --manifest experiments/paper.yaml \
   --out leaderboard_submission.json \
@@ -30,7 +30,7 @@ uvx --from git+https://github.com/agent-axiom/agent-anvil \
   --repo-url "https://github.com/agent-axiom/agent-anvil-demo-agent" \
   --commit-sha "$(git rev-parse HEAD)"
 
-uvx --from git+https://github.com/agent-axiom/agent-anvil \
+uvx --from git+https://github.com/agent-axiom/agent-anvil@v0.2.19 \
   anvil leaderboard validate leaderboard_submission.json
 ```
 
