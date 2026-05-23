@@ -1,0 +1,8 @@
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.venv/
+runs/
+docs/paper/
+leaderboard_submission.json
+submission/
