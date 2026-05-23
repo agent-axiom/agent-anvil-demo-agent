@@ -1,0 +1,5 @@
+[project]
+name = "agent-anvil-demo-agent"
+version = "0.1.0"
+description = "Reference agent repository for Agent Anvil leaderboard submissions."
+requires-python = ">=3.12"
