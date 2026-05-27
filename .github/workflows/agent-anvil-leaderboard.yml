@@ -6,6 +6,8 @@ on:
 permissions:
   contents: read
   actions: read
+  id-token: write
+  attestations: write
 
 env:
   PYTHONPATH: ${{ github.workspace }}
@@ -25,13 +27,13 @@ jobs:
 
       - name: Run Agent Anvil benchmark
         run: |
-          uvx --from git+https://github.com/agent-axiom/agent-anvil@v0.2.19 \
+          uvx --from git+https://github.com/agent-axiom/agent-anvil@v0.2.22 \
             anvil paper reproduce \
             --manifest "$ANVIL_MANIFEST"
 
       - name: Export GitHub Actions leaderboard submission
         run: |
-          uvx --from git+https://github.com/agent-axiom/agent-anvil@v0.2.19 \
+          uvx --from git+https://github.com/agent-axiom/agent-anvil@v0.2.22 \
             anvil leaderboard export "$ANVIL_RESULTS_JSON" \
             --manifest "$ANVIL_MANIFEST" \
             --out leaderboard_submission.json \
@@ -42,9 +44,14 @@ jobs:
 
       - name: Validate GitHub Actions trust metadata
         run: |
-          uvx --from git+https://github.com/agent-axiom/agent-anvil@v0.2.19 \
+          uvx --from git+https://github.com/agent-axiom/agent-anvil@v0.2.22 \
             anvil leaderboard validate leaderboard_submission.json \
             --require-trust github_actions
+
+      - name: Attest leaderboard submission
+        uses: actions/attest@v4
+        with:
+          subject-path: leaderboard_submission.json
 
       - name: Prepare submission artifact
         run: |
@@ -64,9 +71,17 @@ jobs:
             echo "\`\`\`"
             echo
             echo "Destination repo: https://github.com/agent-axiom/agent-anvil-leaderboard"
+            echo
+            echo "Verify provenance after download:"
+            echo
+            echo "\`\`\`bash"
+            echo "gh attestation verify leaderboard_submission.json -R ${GITHUB_REPOSITORY}"
+            echo "\`\`\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@v7
         with:
           name: agent-anvil-leaderboard-submission
-          path: submission/*.json
+          path: |
+            leaderboard_submission.json
+            submission/*.json
