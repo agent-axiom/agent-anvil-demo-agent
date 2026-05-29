@@ -14,6 +14,7 @@ env:
   ANVIL_RESULTS_JSON: docs/paper/results.json
   ANVIL_MANIFEST: experiments/paper.yaml
   ANVIL_AGENT_NAME: Agent Anvil Demo Agent
+  LEADERBOARD_REPO: agent-axiom/agent-anvil-leaderboard
 
 jobs:
   leaderboard-submission:
@@ -27,13 +28,13 @@ jobs:
 
       - name: Run Agent Anvil benchmark
         run: |
-          uvx --from git+https://github.com/agent-axiom/agent-anvil@v0.2.22 \
+          uvx --from git+https://github.com/agent-axiom/agent-anvil@v0.2.23 \
             anvil paper reproduce \
             --manifest "$ANVIL_MANIFEST"
 
       - name: Export GitHub Actions leaderboard submission
         run: |
-          uvx --from git+https://github.com/agent-axiom/agent-anvil@v0.2.22 \
+          uvx --from git+https://github.com/agent-axiom/agent-anvil@v0.2.23 \
             anvil leaderboard export "$ANVIL_RESULTS_JSON" \
             --manifest "$ANVIL_MANIFEST" \
             --out leaderboard_submission.json \
@@ -44,7 +45,7 @@ jobs:
 
       - name: Validate GitHub Actions trust metadata
         run: |
-          uvx --from git+https://github.com/agent-axiom/agent-anvil@v0.2.22 \
+          uvx --from git+https://github.com/agent-axiom/agent-anvil@v0.2.23 \
             anvil leaderboard validate leaderboard_submission.json \
             --require-trust github_actions
 
@@ -79,9 +80,45 @@ jobs:
             echo "\`\`\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Check out public leaderboard
+        uses: actions/checkout@v6
+        with:
+          repository: agent-axiom/agent-anvil-leaderboard
+          path: leaderboard-repo
+          token: ${{ secrets.LEADERBOARD_PR_TOKEN }}
+
+      - name: Prepare leaderboard PR file and body
+        run: |
+          uvx --from git+https://github.com/agent-axiom/agent-anvil@v0.2.23 \
+            anvil leaderboard pr leaderboard_submission.json \
+            --leaderboard-repo leaderboard-repo \
+            --require-trust github_actions \
+            --pr-body-out agent-anvil-leaderboard-pr.md \
+            --force
+
+      - name: Open leaderboard pull request
+        env:
+          GH_TOKEN: ${{ secrets.LEADERBOARD_PR_TOKEN }}
+        run: |
+          cd leaderboard-repo
+          submission_name="$(echo "${GITHUB_REPOSITORY}" | tr '/[:upper:]' '-[:lower:]')"
+          branch="add-${submission_name}-submission-${GITHUB_RUN_ID}"
+          git config user.name "agent-anvil-bot"
+          git config user.email "agent-anvil-bot@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add submissions
+          git commit -m "Refresh ${submission_name} leaderboard submission"
+          git push --set-upstream origin "$branch"
+          gh pr create \
+            --repo "$LEADERBOARD_REPO" \
+            --head "$branch" \
+            --title "Refresh ${ANVIL_AGENT_NAME} leaderboard submission" \
+            --body-file ../agent-anvil-leaderboard-pr.md
+
       - uses: actions/upload-artifact@v7
         with:
           name: agent-anvil-leaderboard-submission
           path: |
             leaderboard_submission.json
             submission/*.json
+            agent-anvil-leaderboard-pr.md
