@@ -15,6 +15,7 @@ env:
   ANVIL_MANIFEST: experiments/paper.yaml
   ANVIL_AGENT_NAME: Agent Anvil Demo Agent
   LEADERBOARD_REPO: agent-axiom/agent-anvil-leaderboard
+  LEADERBOARD_PR_TOKEN_AVAILABLE: ${{ secrets.LEADERBOARD_PR_TOKEN != '' }}
 
 jobs:
   leaderboard-submission:
@@ -81,6 +82,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Check out public leaderboard
+        if: env.LEADERBOARD_PR_TOKEN_AVAILABLE == 'true'
         uses: actions/checkout@v6
         with:
           repository: agent-axiom/agent-anvil-leaderboard
@@ -88,6 +90,7 @@ jobs:
           token: ${{ secrets.LEADERBOARD_PR_TOKEN }}
 
       - name: Prepare leaderboard PR file and body
+        if: env.LEADERBOARD_PR_TOKEN_AVAILABLE == 'true'
         run: |
           uvx --from git+https://github.com/agent-axiom/agent-anvil@v0.2.23 \
             anvil leaderboard pr leaderboard_submission.json \
@@ -97,6 +100,7 @@ jobs:
             --force
 
       - name: Open leaderboard pull request
+        if: env.LEADERBOARD_PR_TOKEN_AVAILABLE == 'true'
         env:
           GH_TOKEN: ${{ secrets.LEADERBOARD_PR_TOKEN }}
         run: |
@@ -114,6 +118,17 @@ jobs:
             --head "$branch" \
             --title "Refresh ${ANVIL_AGENT_NAME} leaderboard submission" \
             --body-file ../agent-anvil-leaderboard-pr.md
+
+      - name: Note skipped leaderboard pull request
+        if: env.LEADERBOARD_PR_TOKEN_AVAILABLE != 'true'
+        run: |
+          {
+            echo
+            echo "## Auto-PR skipped"
+            echo
+            echo "Set the \`LEADERBOARD_PR_TOKEN\` repository secret to let this workflow"
+            echo "push a branch and open a pull request against \`${LEADERBOARD_REPO}\`."
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@v7
         with:

@@ -40,9 +40,12 @@ def test_demo_workflow_can_open_leaderboard_pr() -> None:
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
 
     assert "LEADERBOARD_PR_TOKEN" in workflow
+    assert "LEADERBOARD_PR_TOKEN_AVAILABLE" in workflow
+    assert "Auto-PR skipped" in workflow
     assert "repository: agent-axiom/agent-anvil-leaderboard" in workflow
     assert "path: leaderboard-repo" in workflow
     assert "token: ${{ secrets.LEADERBOARD_PR_TOKEN }}" in workflow
+    assert "if: env.LEADERBOARD_PR_TOKEN_AVAILABLE == 'true'" in workflow
     assert "anvil leaderboard pr leaderboard_submission.json" in workflow
     assert "--pr-body-out agent-anvil-leaderboard-pr.md" in workflow
     assert "--force" in workflow
